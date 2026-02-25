@@ -1,6 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '../firebase';
 
 // Define types for our content
 export interface MenuItem {
@@ -67,11 +65,11 @@ export interface SiteContent {
     [key: string]: Spacing;
   };
   usps: {
-    aging: { title: string; description: string; image: string };
-    view: { title: string; description: string; image: string };
-    privateRoom: { title: string; description: string; image: string };
-    terrace: { title: string; description: string; image: string };
-    pet: { title: string; description: string; image: string };
+    aging: { title: string; description: string; image: string; titleFontSize?: number; descriptionFontSize?: number; };
+    view: { title: string; description: string; image: string; titleFontSize?: number; descriptionFontSize?: number; };
+    privateRoom: { title: string; description: string; image: string; titleFontSize?: number; descriptionFontSize?: number; };
+    terrace: { title: string; description: string; image: string; titleFontSize?: number; descriptionFontSize?: number; };
+    pet: { title: string; description: string; image: string; titleFontSize?: number; descriptionFontSize?: number; };
   };
   menu: MenuItem[];
   notices: Notice[];
@@ -136,26 +134,36 @@ export const defaultContent: SiteContent = {
       title: "168시간의 기다림,\n드라이에이징 스테이크",
       description: "최적의 온도와 습도에서 168시간 동안 숙성하여 깊은 풍미와 부드러운 식감을 완성했습니다.",
       image: "https://images.unsplash.com/photo-1600891964092-4316c288032e?q=80&w=1000&auto=format&fit=crop",
+      titleFontSize: 24,
+      descriptionFontSize: 14,
     },
     view: {
       title: "도심 속 파노라마 뷰",
       description: "탁 트인 통창 너머로 펼쳐지는 아름다운 야경과 함께 로맨틱한 식사를 즐기세요.",
       image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1000&auto=format&fit=crop",
+      titleFontSize: 30,
+      descriptionFontSize: 14,
     },
     privateRoom: {
       title: "프라이빗 다이닝 룸",
       description: "2인부터 14인까지 수용 가능한 프라이빗 룸에서 소중한 사람들과 오붓한 시간을 보내세요.",
       image: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=1000&auto=format&fit=crop",
+      titleFontSize: 30,
+      descriptionFontSize: 14,
     },
     terrace: {
       title: "로맨틱 테라스",
       description: "선선한 바람과 함께 와인 한 잔의 여유를 즐길 수 있는 야외 테라스 공간입니다.",
       image: "https://images.unsplash.com/photo-1519671482538-518b5c2bf1c6?q=80&w=1000&auto=format&fit=crop",
+      titleFontSize: 20,
+      descriptionFontSize: 14,
     },
     pet: {
       title: "반려견 동반 가능",
       description: "사랑하는 반려견과 함께 특별한 추억을 만드세요. 펫 프렌들리 존이 마련되어 있습니다.",
       image: "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?q=80&w=1000&auto=format&fit=crop",
+      titleFontSize: 20,
+      descriptionFontSize: 14,
     },
   },
   menu: [
@@ -268,89 +276,37 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      // If Firebase is not initialized (e.g. missing config), fallback to localStorage immediately
-      if (!db) {
-        console.log("Firebase not configured, using localStorage");
-        try {
-          const savedContent = localStorage.getItem('site_content_v1');
-          if (savedContent) {
-            setContent(deepMerge(defaultContent, JSON.parse(savedContent)));
-          }
-        } catch (e) {
-          console.error("Failed to load content from localStorage", e);
-        }
-        setIsLoading(false);
-        return;
-      }
-
+    const loadData = () => {
       try {
-        const docRef = doc(db, "siteContent", "main");
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          const data = docSnap.data() as SiteContent;
-          setContent(deepMerge(defaultContent, data));
-        } else {
-          // Initialize DB with default content if it doesn't exist
-          await setDoc(docRef, defaultContent);
+        const savedContent = localStorage.getItem('site_content_v1');
+        if (savedContent) {
+          setContent(deepMerge(defaultContent, JSON.parse(savedContent)));
         }
-      } catch (error) {
-        console.warn("Firebase connection failed (offline or permission issue). Falling back to localStorage.", error);
-        // Fallback to localStorage if Firebase fails
-        try {
-          const savedContent = localStorage.getItem('site_content_v1');
-          if (savedContent) {
-            setContent(deepMerge(defaultContent, JSON.parse(savedContent)));
-          }
-        } catch (e) {
-          console.error("Failed to load content from localStorage fallback", e);
-        }
+      } catch (e) {
+        console.error("Failed to load content from localStorage", e);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchData();
+    loadData();
   }, []);
 
-  const updateContent = async (newContent: SiteContent) => {
+  const updateContent = (newContent: SiteContent) => {
     setContent(newContent);
-    
-    // Always save to localStorage as backup/cache
     try {
       localStorage.setItem('site_content_v1', JSON.stringify(newContent));
-    } catch (localError) {
-      console.error("Failed to save content to localStorage", localError);
-    }
-
-    // Try to save to Firebase if available
-    if (db) {
-      try {
-        const docRef = doc(db, "siteContent", "main");
-        await setDoc(docRef, newContent);
-      } catch (e) {
-        console.warn("Failed to sync with Firebase (offline or permission issue)", e);
-      }
+    } catch (e) {
+      console.error("Failed to save content to localStorage", e);
     }
   };
 
-  const resetContent = async () => {
+  const resetContent = () => {
     setContent(defaultContent);
-    
     try {
       localStorage.setItem('site_content_v1', JSON.stringify(defaultContent));
     } catch (e) {
       console.error("Failed to reset content in localStorage", e);
-    }
-
-    if (db) {
-      try {
-        const docRef = doc(db, "siteContent", "main");
-        await setDoc(docRef, defaultContent);
-      } catch (e) {
-        console.warn("Failed to reset content in Firebase", e);
-      }
     }
   };
 

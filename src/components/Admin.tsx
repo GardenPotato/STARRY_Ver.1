@@ -2,9 +2,368 @@ import React, { useState } from 'react';
 import { Rnd } from 'react-rnd';
 import { useData, SiteContent, MenuItem, Notice, LayoutData, defaultContent } from '../context/DataContext';
 import { motion } from 'motion/react';
-import { Save, RotateCcw, Plus, Trash2, Image as ImageIcon, Type, Layout, Palette, Bell, Move, Grid, Dog } from 'lucide-react';
+import { Save, RotateCcw, Plus, Trash2, Image as ImageIcon, Type, Layout, Palette, Bell, Move, Grid, Dog, Download } from 'lucide-react';
 
 import { EditableElement } from './EditableElement';
+
+// Helper to generate static HTML
+const generateStaticHtml = (content: SiteContent) => {
+  // SVGs for Icons
+  const iconInstagram = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>`;
+  const iconMessageCircle = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>`;
+  const iconClock = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+  const iconPhone = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+  const iconChevronRight = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="m9 18 6-6-6-6"/></svg>`;
+
+  return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${content.hero.headline.split('\n')[0]}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+KR:wght@100;300;400;500;700;900&family=Noto+Serif+KR:wght@200;300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: black; color: white; }
+        .font-serif { font-family: 'Noto Serif KR', serif; }
+        .font-sans-kr { font-family: 'Noto Sans KR', sans-serif; }
+        
+        /* Hide scrollbar */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.8s ease-out forwards; }
+        
+        @keyframes twinkle { 0%, 100% { opacity: 0.2; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
+        .star { position: absolute; background: white; border-radius: 50%; animation: twinkle 3s infinite ease-in-out; }
+    </style>
+</head>
+<body class="bg-black text-white min-h-screen">
+    <div class="w-full max-w-[480px] mx-auto relative overflow-hidden shadow-2xl bg-black min-h-screen">
+        
+        <!-- Global Background -->
+        <div class="fixed inset-0 z-[-1]">
+            <img src="https://images.unsplash.com/photo-1506318137071-a8bcbf67cc77?q=80&w=1000&auto=format&fit=crop" class="w-full h-full object-cover opacity-40 blur-3xl scale-110">
+            <div class="absolute inset-0 bg-black/40"></div>
+        </div>
+
+        <!-- Hero Section -->
+        <section class="relative h-[85vh] w-full overflow-hidden" style="padding-top: ${content.sectionSpacing?.hero?.paddingTop || 0}px; padding-bottom: ${content.sectionSpacing?.hero?.paddingBottom || 0}px;">
+            <div class="absolute inset-0 z-0">
+                <div class="w-full h-full bg-cover bg-center" style="background-image: url('${content.hero.backgroundImage}'); transform: scale(1);"></div>
+                <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/40"></div>
+                
+                <!-- Twinkling Stars -->
+                ${Array.from({ length: 25 }).map(() => `
+                    <div class="star" style="
+                        top: ${Math.random() * 100}%; 
+                        left: ${Math.random() * 100}%; 
+                        width: ${Math.random() * 2 + 1}px; 
+                        height: ${Math.random() * 2 + 1}px; 
+                        animation-delay: ${Math.random() * 3}s;
+                    "></div>
+                `).join('')}
+            </div>
+            
+            <!-- Hero Content -->
+            ${content.hero.layout ? `
+            <!-- Logo -->
+            ${content.hero.layout.logo ? `
+            <div class="absolute z-20 flex flex-col items-center justify-center pointer-events-none" style="left: ${content.hero.layout.logo.x}px; top: ${content.hero.layout.logo.y}px; width: ${content.hero.layout.logo.width}px; height: ${content.hero.layout.logo.height}px;">
+                <img src="${content.hero.logo}" alt="Logo" class="w-full h-full object-contain">
+            </div>` : ''}
+
+            <!-- Headline -->
+            <div class="absolute z-10 flex flex-col items-center gap-4" style="left: ${content.hero.layout.headline.x}px; top: ${content.hero.layout.headline.y}px; width: ${content.hero.layout.headline.width}px; height: ${content.hero.layout.headline.height}px;">
+                <h1 class="font-bold leading-tight whitespace-pre-line w-full text-center" style="
+                    font-family: '${content.hero.layout.headline.fontFamily || 'Noto Serif KR'}';
+                    font-size: ${content.hero.layout.headline.fontSize}px; 
+                    color: ${content.hero.layout.headline.color}; 
+                    text-shadow: ${content.hero.layout.headline.textShadowOffsetX || 0}px ${content.hero.layout.headline.textShadowOffsetY || 0}px ${content.hero.layout.headline.textShadowBlur || 0}px ${content.hero.layout.headline.textShadowColor || 'transparent'};
+                    -webkit-text-stroke: ${content.hero.layout.headline.textStrokeWidth || 0}px ${content.hero.layout.headline.textStrokeColor || 'transparent'};
+                ">
+                    ${content.hero.headline}
+                </h1>
+            </div>
+
+            <!-- Subheadline -->
+            <div class="absolute z-10 flex flex-col items-center gap-6" style="left: ${content.hero.layout.subheadline.x}px; top: ${content.hero.layout.subheadline.y}px; width: ${content.hero.layout.subheadline.width}px; height: ${content.hero.layout.subheadline.height}px;">
+                <p class="font-light text-sm w-full text-center" style="
+                    font-family: '${content.hero.layout.subheadline.fontFamily || 'Noto Sans KR'}';
+                    font-size: ${content.hero.layout.subheadline.fontSize}px; 
+                    color: ${content.hero.layout.subheadline.color};
+                    text-shadow: ${content.hero.layout.subheadline.textShadowOffsetX || 0}px ${content.hero.layout.subheadline.textShadowOffsetY || 0}px ${content.hero.layout.subheadline.textShadowBlur || 0}px ${content.hero.layout.subheadline.textShadowColor || 'transparent'};
+                    -webkit-text-stroke: ${content.hero.layout.subheadline.textStrokeWidth || 0}px ${content.hero.layout.subheadline.textStrokeColor || 'transparent'};
+                ">
+                    ${content.hero.subheadline}
+                </p>
+            </div>
+
+            <!-- CTA -->
+            <div class="absolute z-10 flex flex-col items-center gap-6" style="left: ${content.hero.layout.cta.x}px; top: ${content.hero.layout.cta.y}px; width: ${content.hero.layout.cta.width}px; height: ${content.hero.layout.cta.height}px;">
+                <a href="${content.contact.naverMapUrl}" target="_blank" class="w-full h-full flex items-center justify-center rounded-full text-white font-medium text-sm transition-all active:scale-95 shadow-[0_0_20px_rgba(0,71,171,0.5)] hover:shadow-[0_0_30px_rgba(0,71,171,0.8)] border border-white/20 backdrop-blur-md" style="
+                    background-color: ${content.theme.primaryColor}dd;
+                    font-family: '${content.hero.layout.cta.fontFamily || 'Noto Sans KR'}';
+                    font-size: ${content.hero.layout.cta.fontSize}px;
+                    color: ${content.hero.layout.cta.color};
+                ">
+                    ${content.hero.ctaText}
+                </a>
+            </div>
+            ` : ''}
+
+            <!-- Scroll Down Indicator -->
+            <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10">
+                <span class="text-[10px] tracking-widest text-gray-400 uppercase">Scroll Down</span>
+                <div class="w-[1px] h-10 bg-gradient-to-b from-white to-transparent"></div>
+            </div>
+        </section>
+
+        <!-- USP 1: Aging -->
+        <section class="relative overflow-hidden bg-black px-6 py-10" style="${[
+            content.sectionSpacing?.usp_aging?.paddingTop ? `padding-top: ${content.sectionSpacing.usp_aging.paddingTop}px;` : '',
+            content.sectionSpacing?.usp_aging?.paddingBottom ? `padding-bottom: ${content.sectionSpacing.usp_aging.paddingBottom}px;` : '',
+            content.sectionSpacing?.usp_aging?.marginTop ? `margin-top: ${content.sectionSpacing.usp_aging.marginTop}px;` : '',
+            content.sectionSpacing?.usp_aging?.marginBottom ? `margin-bottom: ${content.sectionSpacing.usp_aging.marginBottom}px;` : ''
+        ].join(' ')}">
+            <div class="absolute -bottom-[20%] -right-[20%] w-[500px] h-[500px] rounded-full bg-[#DC143C] opacity-20 blur-[120px] pointer-events-none z-0"></div>
+            <div class="space-y-6 relative z-10">
+                <div class="aspect-[4/5] w-full overflow-hidden rounded-sm scroll-animate opacity-0 translate-y-10 transition-all duration-1000 ease-out">
+                    <img src="${content.usps.aging.image}" alt="Dry Aging" class="w-full h-full object-cover">
+                </div>
+                <div class="space-y-4 scroll-animate opacity-0 translate-y-10 transition-all duration-1000 ease-out delay-200">
+                    <h3 class="text-2xl font-serif text-white" style="font-size: ${content.usps.aging.titleFontSize || 24}px;">${content.usps.aging.title.replace(/\n/g, '<br/>')}</h3>
+                    <p class="text-gray-400 font-light leading-relaxed text-sm whitespace-pre-line" style="font-size: ${content.usps.aging.descriptionFontSize || 14}px;">${content.usps.aging.description}</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- USP 2: View -->
+        <section class="relative w-full py-10" style="${[
+            content.sectionSpacing?.usp_view?.paddingTop ? `padding-top: ${content.sectionSpacing.usp_view.paddingTop}px;` : '',
+            content.sectionSpacing?.usp_view?.paddingBottom ? `padding-bottom: ${content.sectionSpacing.usp_view.paddingBottom}px;` : '',
+            content.sectionSpacing?.usp_view?.marginTop ? `margin-top: ${content.sectionSpacing.usp_view.marginTop}px;` : '',
+            content.sectionSpacing?.usp_view?.marginBottom ? `margin-bottom: ${content.sectionSpacing.usp_view.marginBottom}px;` : ''
+        ].join(' ')}">
+            <div class="relative w-full h-[50vh] min-h-[400px] overflow-hidden">
+                <img src="${content.usps.view.image}" alt="View" class="absolute inset-0 w-full h-full object-cover scroll-animate opacity-0 scale-110 transition-all duration-1000 ease-out">
+                <div class="absolute bottom-0 left-0 w-full h-[60%] bg-gradient-to-t from-black/80 to-transparent"></div>
+                <div class="absolute bottom-0 left-0 w-full p-8 flex flex-col justify-end items-start text-left scroll-animate opacity-0 translate-y-10 transition-all duration-1000 ease-out delay-300">
+                    <h3 class="text-3xl font-serif text-white mb-3 drop-shadow-lg" style="font-size: ${content.usps.view.titleFontSize || 30}px;">${content.usps.view.title}</h3>
+                    <p class="text-white/90 font-light leading-relaxed text-sm drop-shadow-md max-w-lg whitespace-pre-line" style="font-size: ${content.usps.view.descriptionFontSize || 14}px;">${content.usps.view.description}</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- USP 3: Private Room -->
+        <section class="relative w-full py-10" style="${[
+            content.sectionSpacing?.usp_privateRoom?.paddingTop ? `padding-top: ${content.sectionSpacing.usp_privateRoom.paddingTop}px;` : '',
+            content.sectionSpacing?.usp_privateRoom?.paddingBottom ? `padding-bottom: ${content.sectionSpacing.usp_privateRoom.paddingBottom}px;` : '',
+            content.sectionSpacing?.usp_privateRoom?.marginTop ? `margin-top: ${content.sectionSpacing.usp_privateRoom.marginTop}px;` : '',
+            content.sectionSpacing?.usp_privateRoom?.marginBottom ? `margin-bottom: ${content.sectionSpacing.usp_privateRoom.marginBottom}px;` : ''
+        ].join(' ')}">
+            <div class="relative w-full h-[50vh] min-h-[400px] overflow-hidden">
+                <img src="${content.usps.privateRoom.image}" alt="Private Room" class="absolute inset-0 w-full h-full object-cover scroll-animate opacity-0 scale-110 transition-all duration-1000 ease-out">
+                <div class="absolute bottom-0 left-0 w-full h-[60%] bg-gradient-to-t from-black/80 to-transparent"></div>
+                <div class="absolute bottom-0 left-0 w-full p-8 flex flex-col justify-end items-start text-left scroll-animate opacity-0 translate-y-10 transition-all duration-1000 ease-out delay-300">
+                    <h3 class="text-3xl font-serif text-white mb-3 drop-shadow-lg" style="font-size: ${content.usps.privateRoom.titleFontSize || 30}px;">${content.usps.privateRoom.title}</h3>
+                    <p class="text-white/90 font-light leading-relaxed text-sm drop-shadow-md max-w-lg whitespace-pre-line" style="font-size: ${content.usps.privateRoom.descriptionFontSize || 14}px;">${content.usps.privateRoom.description}</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- USP 4 & 5: Terrace & Pet -->
+        <section class="relative overflow-hidden bg-black px-6 py-10" style="${[
+            content.sectionSpacing?.usp_terrace_pet?.paddingTop ? `padding-top: ${content.sectionSpacing.usp_terrace_pet.paddingTop}px;` : '',
+            content.sectionSpacing?.usp_terrace_pet?.paddingBottom ? `padding-bottom: ${content.sectionSpacing.usp_terrace_pet.paddingBottom}px;` : '',
+            content.sectionSpacing?.usp_terrace_pet?.marginTop ? `margin-top: ${content.sectionSpacing.usp_terrace_pet.marginTop}px;` : '',
+            content.sectionSpacing?.usp_terrace_pet?.marginBottom ? `margin-bottom: ${content.sectionSpacing.usp_terrace_pet.marginBottom}px;` : ''
+        ].join(' ')}">
+            <div class="absolute -bottom-[10%] left-[10%] w-[300px] h-[300px] rounded-full bg-[#008080] opacity-20 blur-[100px] pointer-events-none z-0"></div>
+            <div class="absolute -top-[10%] -right-[10%] w-[300px] h-[300px] rounded-full bg-[#9400D3] opacity-20 blur-[100px] pointer-events-none z-0"></div>
+
+            <div class="flex flex-col gap-16">
+                <!-- Terrace -->
+                <div class="space-y-4 relative z-10">
+                    <div class="aspect-[3/4] w-full overflow-hidden rounded-sm scroll-animate opacity-0 translate-y-10 transition-all duration-1000 ease-out">
+                        <img src="${content.usps.terrace.image}" alt="Terrace" class="w-full h-full object-cover">
+                    </div>
+                    <div class="space-y-2 scroll-animate opacity-0 translate-y-10 transition-all duration-1000 ease-out delay-200">
+                        <h4 class="text-xl font-serif text-white" style="font-size: ${content.usps.terrace.titleFontSize || 20}px;">${content.usps.terrace.title}</h4>
+                        <p class="text-gray-300 font-light text-sm leading-relaxed whitespace-pre-line" style="font-size: ${content.usps.terrace.descriptionFontSize || 14}px;">${content.usps.terrace.description}</p>
+                    </div>
+                </div>
+                <!-- Pet -->
+                <div class="space-y-4 relative z-10">
+                    <div class="aspect-[3/4] w-full overflow-hidden rounded-sm scroll-animate opacity-0 translate-y-10 transition-all duration-1000 ease-out">
+                        <img src="${content.usps.pet.image}" alt="Pet" class="w-full h-full object-cover">
+                    </div>
+                    <div class="space-y-2 scroll-animate opacity-0 translate-y-10 transition-all duration-1000 ease-out delay-200">
+                        <h4 class="text-xl font-serif text-white" style="font-size: ${content.usps.pet.titleFontSize || 20}px;">${content.usps.pet.title}</h4>
+                        <p class="text-gray-300 font-light text-sm leading-relaxed whitespace-pre-line" style="font-size: ${content.usps.pet.descriptionFontSize || 14}px;">${content.usps.pet.description}</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Menu Section -->
+        <section class="relative overflow-hidden bg-black py-10" style="${[
+            content.sectionSpacing?.menu?.paddingTop ? `padding-top: ${content.sectionSpacing.menu.paddingTop}px;` : '',
+            content.sectionSpacing?.menu?.paddingBottom ? `padding-bottom: ${content.sectionSpacing.menu.paddingBottom}px;` : '',
+            content.sectionSpacing?.menu?.marginTop ? `margin-top: ${content.sectionSpacing.menu.marginTop}px;` : '',
+            content.sectionSpacing?.menu?.marginBottom ? `margin-bottom: ${content.sectionSpacing.menu.marginBottom}px;` : ''
+        ].join(' ')}">
+            <div class="absolute top-[20%] -left-[10%] w-[400px] h-[400px] rounded-full bg-[#0F52BA] opacity-15 blur-[120px] pointer-events-none z-0"></div>
+            <div class="absolute bottom-[20%] -right-[10%] w-[400px] h-[400px] rounded-full bg-[#FFD700] opacity-15 blur-[120px] pointer-events-none z-0"></div>
+
+            <div class="mb-10 text-center relative z-10 px-6 scroll-animate opacity-0 translate-y-10 transition-all duration-1000 ease-out">
+                <h3 class="text-2xl font-serif text-white mb-2">Signature Menu</h3>
+                <div class="w-10 h-[1px] bg-white/30 mx-auto"></div>
+            </div>
+
+            <div class="relative z-10 w-full overflow-x-auto flex gap-4 px-6 pb-8 snap-x snap-mandatory scrollbar-hide scroll-animate opacity-0 translate-y-10 transition-all duration-1000 ease-out delay-200">
+                ${content.menu.map(item => `
+                <div class="flex-shrink-0 w-[280px] snap-center bg-[#111] border border-gray-800 rounded-xl overflow-hidden shadow-lg flex flex-col">
+                    <div class="h-[200px] w-full overflow-hidden bg-gray-800 relative">
+                        <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-5 flex-1 flex flex-col">
+                        <div class="mb-2">
+                            <h4 class="text-lg font-medium text-white truncate">${item.name}</h4>
+                            <span class="text-sm font-serif block mt-1" style="color: ${content.theme.primaryColor}">${item.price}</span>
+                        </div>
+                        <p class="text-xs text-gray-400 line-clamp-2 leading-relaxed whitespace-pre-line">${item.description}</p>
+                    </div>
+                </div>
+                `).join('')}
+                <div class="w-2 flex-shrink-0"></div>
+            </div>
+        </section>
+
+        <!-- Gallery Section -->
+        ${content.gallery && content.gallery.length > 0 ? `
+        <section class="px-6 py-10" style="${[
+            content.sectionSpacing?.gallery?.paddingTop ? `padding-top: ${content.sectionSpacing.gallery.paddingTop}px;` : '',
+            content.sectionSpacing?.gallery?.paddingBottom ? `padding-bottom: ${content.sectionSpacing.gallery.paddingBottom}px;` : '',
+            content.sectionSpacing?.gallery?.marginTop ? `margin-top: ${content.sectionSpacing.gallery.marginTop}px;` : '',
+            content.sectionSpacing?.gallery?.marginBottom ? `margin-bottom: ${content.sectionSpacing.gallery.marginBottom}px;` : ''
+        ].join(' ')}">
+            <div class="mb-10 text-center scroll-animate opacity-0 translate-y-10 transition-all duration-1000 ease-out">
+                <h3 class="text-2xl font-serif text-white mb-2">Gallery</h3>
+                <div class="w-10 h-[1px] bg-white/30 mx-auto"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 scroll-animate opacity-0 translate-y-10 transition-all duration-1000 ease-out delay-200">
+                ${content.gallery.map((image, index) => `
+                <div class="rounded-sm overflow-hidden ${index % 3 === 0 ? 'col-span-2 aspect-video' : 'aspect-square'}">
+                    <img src="${image}" alt="Gallery ${index + 1}" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500">
+                </div>
+                `).join('')}
+            </div>
+        </section>
+        ` : ''}
+
+        <!-- Notices -->
+        ${content.notices && content.notices.length > 0 ? `
+        <section class="px-6 py-10" style="${[
+            content.sectionSpacing?.notices?.paddingTop ? `padding-top: ${content.sectionSpacing.notices.paddingTop}px;` : '',
+            content.sectionSpacing?.notices?.paddingBottom ? `padding-bottom: ${content.sectionSpacing.notices.paddingBottom}px;` : '',
+            content.sectionSpacing?.notices?.marginTop ? `margin-top: ${content.sectionSpacing.notices.marginTop}px;` : '',
+            content.sectionSpacing?.notices?.marginBottom ? `margin-bottom: ${content.sectionSpacing.notices.marginBottom}px;` : ''
+        ].join(' ')}">
+            <div class="mb-10 text-center scroll-animate opacity-0 translate-y-10 transition-all duration-1000 ease-out">
+                <h3 class="text-2xl font-serif text-white mb-2">Notice & Event</h3>
+                <div class="w-10 h-[1px] bg-white/30 mx-auto"></div>
+            </div>
+            <div class="space-y-4 scroll-animate opacity-0 translate-y-10 transition-all duration-1000 ease-out delay-200">
+                ${content.notices.map(notice => `
+                <div class="bg-white/5 backdrop-blur-md p-5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="text-white font-medium">${notice.title}</h4>
+                        <span class="text-xs text-gray-500">${notice.date}</span>
+                    </div>
+                    <p class="text-sm text-gray-400 whitespace-pre-line leading-relaxed">${notice.content}</p>
+                </div>
+                `).join('')}
+            </div>
+        </section>
+        ` : ''}
+
+        <!-- Contact -->
+        <section class="px-6 py-10" style="${[
+            content.sectionSpacing?.contact?.paddingTop ? `padding-top: ${content.sectionSpacing.contact.paddingTop}px;` : '',
+            content.sectionSpacing?.contact?.paddingBottom ? `padding-bottom: ${content.sectionSpacing.contact.paddingBottom}px;` : '',
+            content.sectionSpacing?.contact?.marginTop ? `margin-top: ${content.sectionSpacing.contact.marginTop}px;` : '',
+            content.sectionSpacing?.contact?.marginBottom ? `margin-bottom: ${content.sectionSpacing.contact.marginBottom}px;` : ''
+        ].join(' ')}">
+            <div class="bg-[#1a1a1a] rounded-xl overflow-hidden shadow-lg scroll-animate opacity-0 translate-y-10 transition-all duration-1000 ease-out">
+                <div class="h-48 bg-gray-800 relative">
+                    <img src="${content.contact.mapImage}" alt="Map" class="w-full h-full object-cover">
+                </div>
+                <div class="p-6 text-center space-y-6">
+                    <div class="space-y-2">
+                        <h3 class="text-xl font-serif text-white">오시는 길</h3>
+                        <p class="text-sm text-gray-400">${content.contact.address}</p>
+                    </div>
+                    <a href="${content.contact.naverMapUrl}" target="_blank" class="block w-full py-4 rounded-lg font-bold text-white transition-colors flex items-center justify-center gap-2" style="background-color: #03C75A;">
+                        <span>네이버 지도 예약하기</span>
+                        ${iconChevronRight}
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="py-12 px-6 bg-black border-t border-white/10 text-center">
+            <div class="flex justify-center gap-6 mb-8">
+                <a href="${content.contact.instagram}" target="_blank" class="p-3 rounded-full bg-white/5 text-white hover:bg-white/10 transition-colors">
+                    ${iconInstagram}
+                </a>
+                <a href="${content.contact.blog}" target="_blank" class="p-3 rounded-full bg-white/5 text-white hover:bg-white/10 transition-colors">
+                    ${iconMessageCircle}
+                </a>
+            </div>
+            <div class="space-y-3 text-xs text-gray-500 font-light">
+                <div class="flex items-center justify-center gap-2">
+                    ${iconClock}
+                    <span>${content.contact.hours}</span>
+                </div>
+                <div class="flex items-center justify-center gap-2">
+                    ${iconPhone}
+                    <span>${content.contact.phone}</span>
+                </div>
+                <p class="pt-4 border-t border-white/5 mt-4">&copy; ${new Date().getFullYear()} STARRY. All rights reserved.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scroll Animation Script -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.1
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.remove('opacity-0', 'translate-y-10', 'scale-110');
+                        entry.target.classList.add('opacity-100', 'translate-y-0', 'scale-100');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            const elements = document.querySelectorAll('.scroll-animate');
+            elements.forEach(el => observer.observe(el));
+        });
+    </script>
+</body>
+</html>`;
+};
 
 const InputGroup = ({ label, value, onChange, type = "text", textarea = false }: any) => (
   <div className="mb-4">
@@ -125,6 +484,19 @@ export default function Admin() {
   const handleSave = () => {
     updateContent(localContent);
     alert('변경사항이 저장되었습니다.');
+  };
+
+  const handleExport = () => {
+    const html = generateStaticHtml(localContent);
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'index.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const handleReset = () => {
@@ -271,6 +643,20 @@ export default function Admin() {
           <span className="w-2 h-8 bg-blue-600 rounded-full"></span>
           STARRY Admin
         </h1>
+
+        {/* Export Button - Added at the top for visibility */}
+        <div className="mb-6 pb-6 border-b border-gray-800">
+          <button
+            onClick={handleExport}
+            className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-green-900/20 transition-all active:scale-95 border border-green-500/30"
+          >
+            <Download className="w-5 h-5" />
+            최종 웹사이트 다운로드
+          </button>
+          <p className="text-[10px] text-gray-500 text-center mt-2">
+            * DB 없이 동작하는 순수 HTML 파일 생성
+          </p>
+        </div>
         
         <nav className="flex-1 space-y-2">
           {[
@@ -532,8 +918,8 @@ export default function Admin() {
                           />
                         </div>
                         <div className="space-y-4">
-                          <h3 className="text-2xl font-serif text-white">{localContent.usps.aging.title}</h3>
-                          <p className="text-gray-400 font-light leading-relaxed text-sm whitespace-pre-line">
+                          <h3 className="text-2xl font-serif text-white" style={{ fontSize: localContent.usps.aging.titleFontSize || 24 }}>{localContent.usps.aging.title}</h3>
+                          <p className="text-gray-400 font-light leading-relaxed text-sm whitespace-pre-line" style={{ fontSize: localContent.usps.aging.descriptionFontSize || 14 }}>
                             {localContent.usps.aging.description}
                           </p>
                         </div>
@@ -572,10 +958,10 @@ export default function Admin() {
 
                         {/* Content at Bottom */}
                         <div className="absolute bottom-0 left-0 w-full p-8 flex flex-col justify-end items-start text-left z-20">
-                          <h3 className="text-3xl font-serif text-white mb-3 drop-shadow-lg">
+                          <h3 className="text-3xl font-serif text-white mb-3 drop-shadow-lg" style={{ fontSize: localContent.usps.view.titleFontSize || 30 }}>
                             {localContent.usps.view.title}
                           </h3>
-                          <p className="text-white/90 font-light leading-relaxed text-sm drop-shadow-md max-w-lg whitespace-pre-line">
+                          <p className="text-white/90 font-light leading-relaxed text-sm drop-shadow-md max-w-lg whitespace-pre-line" style={{ fontSize: localContent.usps.view.descriptionFontSize || 14 }}>
                             {localContent.usps.view.description}
                           </p>
                         </div>
@@ -614,10 +1000,10 @@ export default function Admin() {
 
                         {/* Content at Bottom */}
                         <div className="absolute bottom-0 left-0 w-full p-8 flex flex-col justify-end items-start text-left z-20">
-                          <h3 className="text-3xl font-serif text-white mb-3 drop-shadow-lg">
+                          <h3 className="text-3xl font-serif text-white mb-3 drop-shadow-lg" style={{ fontSize: localContent.usps.privateRoom.titleFontSize || 30 }}>
                             {localContent.usps.privateRoom.title}
                           </h3>
-                          <p className="text-white/90 font-light leading-relaxed text-sm drop-shadow-md max-w-lg whitespace-pre-line">
+                          <p className="text-white/90 font-light leading-relaxed text-sm drop-shadow-md max-w-lg whitespace-pre-line" style={{ fontSize: localContent.usps.privateRoom.descriptionFontSize || 14 }}>
                             {localContent.usps.privateRoom.description}
                           </p>
                         </div>
@@ -654,8 +1040,8 @@ export default function Admin() {
                             <img src={localContent.usps.terrace.image} alt="Terrace" className="w-full h-full object-cover" />
                           </div>
                           <div className="space-y-2">
-                            <h4 className="text-xl font-serif text-white">{localContent.usps.terrace.title}</h4>
-                            <p className="text-gray-300 font-light text-sm leading-relaxed whitespace-pre-line">
+                            <h4 className="text-xl font-serif text-white" style={{ fontSize: localContent.usps.terrace.titleFontSize || 20 }}>{localContent.usps.terrace.title}</h4>
+                            <p className="text-gray-300 font-light text-sm leading-relaxed whitespace-pre-line" style={{ fontSize: localContent.usps.terrace.descriptionFontSize || 14 }}>
                               {localContent.usps.terrace.description}
                             </p>
                           </div>
@@ -667,8 +1053,8 @@ export default function Admin() {
                              <img src={localContent.usps.pet.image} alt="Pet Friendly" className="w-full h-full object-cover" />
                           </div>
                           <div className="space-y-2">
-                            <h4 className="text-xl font-serif text-white">{localContent.usps.pet.title}</h4>
-                            <p className="text-gray-300 font-light text-sm leading-relaxed whitespace-pre-line">
+                            <h4 className="text-xl font-serif text-white" style={{ fontSize: localContent.usps.pet.titleFontSize || 20 }}>{localContent.usps.pet.title}</h4>
+                            <p className="text-gray-300 font-light text-sm leading-relaxed whitespace-pre-line" style={{ fontSize: localContent.usps.pet.descriptionFontSize || 14 }}>
                               {localContent.usps.pet.description}
                             </p>
                           </div>
@@ -845,6 +1231,62 @@ export default function Admin() {
                              <SpacingSlider label="Top Padding" value={spacing.paddingTop || 0} onChange={(val) => handleSpacingChange(sectionKey, 'paddingTop', val)} />
                              <SpacingSlider label="Bottom Padding" value={spacing.paddingBottom || 0} onChange={(val) => handleSpacingChange(sectionKey, 'paddingBottom', val)} />
                            </div>
+
+                           {/* USP Font Settings */}
+                           {sectionKey.startsWith('usp_') && (() => {
+                             const uspKey = sectionKey.replace('usp_', '');
+                             
+                             // Handle special case for terrace_pet
+                             if (uspKey === 'terrace_pet') {
+                               return (
+                                 <div className="space-y-4 pt-4 border-t border-gray-800">
+                                   <h4 className="text-sm font-semibold text-purple-400">Terrace Typography</h4>
+                                   <SpacingSlider 
+                                      label="Title Size" 
+                                      value={localContent.usps.terrace.titleFontSize || 20} 
+                                      onChange={(v) => handleNestedChange('usps', 'terrace', 'titleFontSize', v)} 
+                                   />
+                                   <SpacingSlider 
+                                      label="Desc Size" 
+                                      value={localContent.usps.terrace.descriptionFontSize || 14} 
+                                      onChange={(v) => handleNestedChange('usps', 'terrace', 'descriptionFontSize', v)} 
+                                   />
+                                   
+                                   <h4 className="text-sm font-semibold text-purple-400 mt-4">Pet Typography</h4>
+                                   <SpacingSlider 
+                                      label="Title Size" 
+                                      value={localContent.usps.pet.titleFontSize || 20} 
+                                      onChange={(v) => handleNestedChange('usps', 'pet', 'titleFontSize', v)} 
+                                   />
+                                   <SpacingSlider 
+                                      label="Desc Size" 
+                                      value={localContent.usps.pet.descriptionFontSize || 14} 
+                                      onChange={(v) => handleNestedChange('usps', 'pet', 'descriptionFontSize', v)} 
+                                   />
+                                 </div>
+                               );
+                             }
+                             
+                             // Standard USPs
+                             const uspData = localContent.usps[uspKey as keyof typeof localContent.usps];
+                             if (!uspData) return null;
+                             
+                             return (
+                               <div className="space-y-4 pt-4 border-t border-gray-800">
+                                 <h4 className="text-sm font-semibold text-purple-400">Typography</h4>
+                                 <SpacingSlider 
+                                    label="Title Size" 
+                                    value={(uspData as any).titleFontSize || (uspKey === 'aging' ? 24 : 30)} 
+                                    onChange={(v) => handleNestedChange('usps', uspKey, 'titleFontSize', v)} 
+                                 />
+                                 <SpacingSlider 
+                                    label="Desc Size" 
+                                    value={(uspData as any).descriptionFontSize || 14} 
+                                    onChange={(v) => handleNestedChange('usps', uspKey, 'descriptionFontSize', v)} 
+                                 />
+                               </div>
+                             );
+                           })()}
                          </div>
                        );
                     })()}
@@ -962,10 +1404,22 @@ export default function Admin() {
             {activeTab === 'usps' && (
               <div className="space-y-8">
                 {Object.entries(localContent.usps).map(([key, usp]) => {
-                  const typedUsp = usp as { title: string; description: string; image: string };
+                  const typedUsp = usp as { title: string; description: string; image: string; titleFontSize?: number; descriptionFontSize?: number; };
                   return (
                     <div key={key} className="bg-[#1a1a1a] p-6 rounded-xl border border-gray-800">
                       <h3 className="text-lg font-medium mb-4 capitalize text-blue-400">{key} Section</h3>
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <SpacingSlider 
+                          label="제목 폰트 크기" 
+                          value={typedUsp.titleFontSize || (key === 'aging' ? 24 : key === 'terrace' || key === 'pet' ? 20 : 30)} 
+                          onChange={(v) => handleNestedChange('usps', key, 'titleFontSize', v)} 
+                        />
+                        <SpacingSlider 
+                          label="설명 폰트 크기" 
+                          value={typedUsp.descriptionFontSize || 14} 
+                          onChange={(v) => handleNestedChange('usps', key, 'descriptionFontSize', v)} 
+                        />
+                      </div>
                       <InputGroup 
                         label="제목" 
                         value={typedUsp.title} 
