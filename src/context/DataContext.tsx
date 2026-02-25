@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 // Define types for our content
 export interface MenuItem {
@@ -238,6 +240,7 @@ interface DataContextType {
   content: SiteContent;
   updateContent: (newContent: SiteContent) => void;
   resetContent: () => void;
+  isLoading: boolean;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -261,39 +264,74 @@ const deepMerge = (target: any, source: any) => {
 };
 
 export const DataProvider = ({ children }: { children: ReactNode }) => {
-  const [content, setContent] = useState<SiteContent>(() => {
-    try {
-      const savedContent = localStorage.getItem('site_content_v1');
-      if (savedContent) {
-        // Deep merge saved content with default content to ensure new fields are preserved
-        return deepMerge(defaultContent, JSON.parse(savedContent));
-      }
-    } catch (e) {
-      console.error("Failed to load content from localStorage", e);
-    }
-    return defaultContent;
-  });
+  const [content, setContent] = useState<SiteContent>(defaultContent);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const updateContent = (newContent: SiteContent) => {
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const docRef = doc(db, "siteContent", "main");
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data() as SiteContent;
+          setContent(deepMerge(defaultContent, data));
+        } else {
+          // Initialize DB with default content if it doesn't exist
+          await setDoc(docRef, defaultContent);
+        }
+      } catch (error) {
+        console.error("Error fetching document: ", error);
+        // Fallback to localStorage if Firebase fails (e.g. invalid config)
+        try {
+          const savedContent = localStorage.getItem('site_content_v1');
+          if (savedContent) {
+            setContent(deepMerge(defaultContent, JSON.parse(savedContent)));
+          }
+        } catch (e) {
+          console.error("Failed to load content from localStorage fallback", e);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const updateContent = async (newContent: SiteContent) => {
     setContent(newContent);
     try {
+      // Save to Firebase
+      const docRef = doc(db, "siteContent", "main");
+      await setDoc(docRef, newContent);
+      
+      // Also save to localStorage as backup/cache
       localStorage.setItem('site_content_v1', JSON.stringify(newContent));
     } catch (e) {
-      console.error("Failed to save content to localStorage", e);
+      console.error("Failed to save content to Firebase", e);
+      // Fallback to localStorage
+      try {
+        localStorage.setItem('site_content_v1', JSON.stringify(newContent));
+      } catch (localError) {
+        console.error("Failed to save content to localStorage", localError);
+      }
     }
   };
 
-  const resetContent = () => {
+  const resetContent = async () => {
     setContent(defaultContent);
     try {
+      const docRef = doc(db, "siteContent", "main");
+      await setDoc(docRef, defaultContent);
       localStorage.setItem('site_content_v1', JSON.stringify(defaultContent));
     } catch (e) {
-      console.error("Failed to reset content in localStorage", e);
+      console.error("Failed to reset content", e);
     }
   };
 
   return (
-    <DataContext.Provider value={{ content, updateContent, resetContent }}>
+    <DataContext.Provider value={{ content, updateContent, resetContent, isLoading }}>
       {children}
     </DataContext.Provider>
   );

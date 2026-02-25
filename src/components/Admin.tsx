@@ -44,12 +44,17 @@ const SpacingSlider = ({ label, value, onChange }: { label: string, value: numbe
 );
 
 export default function Admin() {
-  const { content, updateContent, resetContent } = useData();
+  const { content, updateContent, resetContent, isLoading } = useData();
   const [activeTab, setActiveTab] = useState<'hero' | 'visual' | 'usps' | 'menu' | 'gallery' | 'notices' | 'contact' | 'theme'>('hero');
   const [localContent, setLocalContent] = useState<SiteContent>(content);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [showGuides, setShowGuides] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
+
+  // Auth State
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState('');
 
   // Auto-save logic to prevent data loss on reload
   React.useEffect(() => {
@@ -68,6 +73,54 @@ export default function Admin() {
       setLocalContent(content);
     }
   }, [content]);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'admin1234';
+    if (password === adminPassword) {
+      setIsAuthenticated(true);
+      setAuthError('');
+    } else {
+      setAuthError('비밀번호가 올바르지 않습니다.');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-black text-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-black text-white">
+        <form onSubmit={handleLogin} className="bg-gray-900 p-8 rounded-xl border border-gray-800 shadow-2xl w-full max-w-md space-y-6">
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-bold">관리자 로그인</h2>
+            <p className="text-gray-400 text-sm">컨텐츠를 수정하려면 비밀번호를 입력하세요.</p>
+          </div>
+          <div className="space-y-2">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="비밀번호 입력"
+              className="w-full bg-black border border-gray-700 rounded-lg p-4 text-white focus:outline-none focus:border-blue-500 transition-colors"
+            />
+            {authError && <p className="text-red-500 text-sm">{authError}</p>}
+          </div>
+          <button
+            type="submit"
+            className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+          >
+            로그인
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   const handleSave = () => {
     updateContent(localContent);
