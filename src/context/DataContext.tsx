@@ -269,6 +269,21 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const fetchData = async () => {
+      // If Firebase is not initialized (e.g. missing config), fallback to localStorage immediately
+      if (!db) {
+        console.log("Firebase not configured, using localStorage");
+        try {
+          const savedContent = localStorage.getItem('site_content_v1');
+          if (savedContent) {
+            setContent(deepMerge(defaultContent, JSON.parse(savedContent)));
+          }
+        } catch (e) {
+          console.error("Failed to load content from localStorage", e);
+        }
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const docRef = doc(db, "siteContent", "main");
         const docSnap = await getDoc(docRef);
@@ -281,8 +296,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           await setDoc(docRef, defaultContent);
         }
       } catch (error) {
-        console.error("Error fetching document: ", error);
-        // Fallback to localStorage if Firebase fails (e.g. invalid config)
+        console.warn("Firebase connection failed (offline or permission issue). Falling back to localStorage.", error);
+        // Fallback to localStorage if Firebase fails
         try {
           const savedContent = localStorage.getItem('site_content_v1');
           if (savedContent) {
@@ -301,32 +316,41 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
   const updateContent = async (newContent: SiteContent) => {
     setContent(newContent);
+    
+    // Always save to localStorage as backup/cache
     try {
-      // Save to Firebase
-      const docRef = doc(db, "siteContent", "main");
-      await setDoc(docRef, newContent);
-      
-      // Also save to localStorage as backup/cache
       localStorage.setItem('site_content_v1', JSON.stringify(newContent));
-    } catch (e) {
-      console.error("Failed to save content to Firebase", e);
-      // Fallback to localStorage
+    } catch (localError) {
+      console.error("Failed to save content to localStorage", localError);
+    }
+
+    // Try to save to Firebase if available
+    if (db) {
       try {
-        localStorage.setItem('site_content_v1', JSON.stringify(newContent));
-      } catch (localError) {
-        console.error("Failed to save content to localStorage", localError);
+        const docRef = doc(db, "siteContent", "main");
+        await setDoc(docRef, newContent);
+      } catch (e) {
+        console.warn("Failed to sync with Firebase (offline or permission issue)", e);
       }
     }
   };
 
   const resetContent = async () => {
     setContent(defaultContent);
+    
     try {
-      const docRef = doc(db, "siteContent", "main");
-      await setDoc(docRef, defaultContent);
       localStorage.setItem('site_content_v1', JSON.stringify(defaultContent));
     } catch (e) {
-      console.error("Failed to reset content", e);
+      console.error("Failed to reset content in localStorage", e);
+    }
+
+    if (db) {
+      try {
+        const docRef = doc(db, "siteContent", "main");
+        await setDoc(docRef, defaultContent);
+      } catch (e) {
+        console.warn("Failed to reset content in Firebase", e);
+      }
     }
   };
 
