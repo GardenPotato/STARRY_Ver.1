@@ -1,13 +1,15 @@
 import React from 'react';
-import { motion, useScroll, useTransform } from 'motion/react';
+import { motion } from 'motion/react';
 import { useData } from '../context/DataContext';
 import { MapPin, Phone, Clock, Instagram, MessageCircle, Dog, ChevronRight } from 'lucide-react';
 import ShootingStars from './ShootingStars';
 
 export default function Frontend() {
   const { content } = useData();
-  const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0, 500], [0, 200]);
+
+  if (!content) {
+    return <div className="min-h-screen bg-black text-white flex items-center justify-center">Loading...</div>;
+  }
 
   const fadeInUp = {
     hidden: { opacity: 0, y: 20 },
@@ -57,8 +59,7 @@ export default function Frontend() {
             animate={{ scale: 1 }}
             transition={{ duration: 10, ease: "easeOut" }}
             style={{ 
-              backgroundImage: `url(${content.hero.backgroundImage})`,
-              y: y 
+              backgroundImage: `url(${content.hero.backgroundImage})`
             }}
             className="w-full h-full bg-cover bg-center"
           />
